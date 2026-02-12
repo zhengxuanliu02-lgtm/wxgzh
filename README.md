@@ -30,9 +30,9 @@
 
 ### ⚙️ 多 AI 模型支持
 - DeepSeek
-- 豆包（字节跳动）
-- Kimi（月之暗面）
-- 通义千问（阿里云）
+- 豆包
+- Kimi
+- 通义千问
 
 ## 👥 读者群体
 
@@ -62,7 +62,7 @@ python -m http.server 8000
 npx http-server
 ```
 
-然后在浏览器访问 `http://localhost:8000/wechat-creator-tool-enhanced-v4-final.html`
+然后在浏览器访问 `http://localhost:8000/wechat-v4.html`
 
 ## ⚙️ 配置 API
 
@@ -91,7 +91,7 @@ npx http-server
 ```
 黑阿猫公众号/
 ├── README.md
-└── wechat-creator-tool-enhanced-v4-final.html
+└── wechat-v4.html
 ```
 
 ## 🔐 安全说明
@@ -113,5 +113,4 @@ MIT License
 如有问题或建议，欢迎通过 Issue 联系。
 
 ---
-
-Made with ❤️ by 黑猫
+黑猫
