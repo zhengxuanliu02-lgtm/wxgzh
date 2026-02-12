@@ -50,7 +50,7 @@
 
 ### 直接使用
 
-直接打开 `wechat-creator-tool-enhanced-v4-final.html` 文件即可使用。
+直接打开 `wechat-v4.html` 文件即可使用。
 
 ### 本地服务器（可选）
 
