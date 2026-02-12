@@ -1,0 +1,3452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑阿猫 - 微信公众号创作工作流工具 (V3 多文章生成版)</title>
+    <!-- Tesseract.js OCR库 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        /* ==================== 全局样式重置 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ==================== CSS变量定义 ==================== */
+        :root {
+            --primary-color: #1890ff;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --processing-color: #1890ff;
+            --error-color: #f5222d;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-primary: #262626;
+            --text-secondary: #8c8c8c;
+            --border-color: #d9d9d9;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        /* ==================== 基础页面样式 ==================== */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--bg-color);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* ==================== 容器布局 ==================== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        /* ==================== 页面头部 ==================== */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .header .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        /* ==================== 主要内容区域 ==================== */
+        .main-content {
+            padding: 30px;
+        }
+
+        /* ==================== 选项卡样式 ==================== */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            position: relative;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .tab:hover {
+            color: var(--primary-color);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ==================== 卡片通用样式 ==================== */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        /* ==================== 表单样式 ==================== */
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-group label .required {
+            color: var(--error-color);
+            margin-left: 4px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group input[type="number"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group .hint {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* ==================== 快捷填充按钮 ==================== */
+        .quick-fill {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-fill-btn {
+            padding: 6px 12px;
+            background: #f5f5f5;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-fill-btn:hover {
+            background: #e6f7ff;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* ==================== 按钮样式 ==================== */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #40a9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #49ad16;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ==================== 进度条区域 ==================== */
+        .progress-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        /* 进度条连接线 */
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 60px;
+            right: 60px;
+            height: 3px;
+            background: linear-gradient(to right,
+                var(--border-color) 0%,
+                var(--border-color) 100%);
+            z-index: 0;
+            border-radius: 2px;
+        }
+
+        /* 动态进度条（根据完成状态改变颜色） */
+        .progress-steps.step-1-completed::before {
+            background: linear-gradient(to right,
+                var(--success-color) 0%,
+                var(--success-color) 25%,
+                var(--border-color) 25%,
+                var(--border-color) 100%);
+        }
+
+        .progress-steps.step-2-completed::before {
+            background: linear-gradient(to right,
+                var(--success-color) 0%,
+                var(--success-color) 50%,
+                var(--border-color) 50%,
+                var(--border-color) 100%);
+        }
+
+        .progress-steps.step-3-completed::before {
+            background: linear-gradient(to right,
+                var(--success-color) 0%,
+                var(--success-color) 75%,
+                var(--border-color) 75%,
+                var(--border-color) 100%);
+        }
+
+        .progress-steps.step-4-completed::before {
+            background: var(--success-color);
+        }
+
+        .step-item {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            flex: 1;
+        }
+
+        .step-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.4em;
+            font-weight: 600;
+            transition: all 0.4s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .step-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .step-status {
+            font-size: 0.75em;
+            margin-top: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ==================== 状态颜色定义 ==================== */
+        /* 待执行 - 黄色 */
+        .step-item.pending .step-icon {
+            border-color: var(--warning-color);
+            color: var(--warning-color);
+            background: #fffbe6;
+        }
+        .step-item.pending .step-label {
+            color: var(--warning-color);
+        }
+        .step-item.pending .step-status {
+            color: var(--warning-color);
+        }
+
+        /* 执行中 - 蓝色 */
+        .step-item.processing .step-icon {
+            border-color: var(--processing-color);
+            color: var(--processing-color);
+            background: #e6f7ff;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+        }
+        .step-item.processing .step-label {
+            color: var(--processing-color);
+            font-weight: 600;
+        }
+        .step-item.processing .step-status {
+            color: var(--processing-color);
+        }
+
+        /* 完成 - 绿色 */
+        .step-item.completed .step-icon {
+            border-color: var(--success-color);
+            background: var(--success-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+        }
+        .step-item.completed .step-label {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+        .step-item.completed .step-status {
+            color: var(--success-color);
+        }
+
+        /* 失败 - 红色 */
+        .step-item.failed .step-icon {
+            border-color: var(--error-color);
+            background: #fff1f0;
+            color: var(--error-color);
+            box-shadow: 0 4px 12px rgba(245, 34, 45, 0.3);
+        }
+        .step-item.failed .step-label {
+            color: var(--error-color);
+            font-weight: 600;
+        }
+        .step-item.failed .step-status {
+            color: var(--error-color);
+        }
+
+        /* ==================== 动画效果 ==================== */
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 15px rgba(24, 144, 255, 0);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 执行中图标旋转效果 */
+        .step-item.processing .step-icon {
+            animation: pulse 1.5s infinite, rotate 2s linear infinite;
+        }
+
+        /* 完成状态的对勾动画 */
+        .step-item.completed .step-icon {
+            animation: checkmark 0.4s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* ==================== 结果卡片区域 ==================== */
+        .results-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #fafafa;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            display: none;
+        }
+
+        .result-card.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-card-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .result-content {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+
+        .copy-btn {
+            padding: 6px 16px;
+            font-size: 0.9em;
+            min-height: 32px;
+        }
+
+        /* ==================== 加载动画 ==================== */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1em;
+            color: var(--text-primary);
+        }
+
+        /* ==================== 提示信息 ==================== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: var(--error-color);
+        }
+
+        /* ==================== 响应式设计 ==================== */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+
+            .form-row, .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-steps {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .progress-steps::before {
+                display: none;
+            }
+
+            .step-item {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                text-align: left;
+            }
+
+            .step-icon {
+                margin: 0;
+            }
+
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+
+        /* ==================== 标题分类标签 ==================== */
+        .title-category {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .title-category.viral {
+            background: #fff1f0;
+            color: #f5222d;
+            border: 1px solid #ffa39e;
+        }
+
+        .title-category.practical {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+
+        .title-item {
+            padding: 10px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .title-item:hover {
+            border-color: var(--primary-color);
+            background: #f0f8ff;
+        }
+
+        .title-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ==================== 总结预览区域 ==================== */
+        .summary-preview {
+            background: #f0f8ff;
+            border: 1px solid #b3d8ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-preview-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        /* ==================== API配置区域 ==================== */
+        .api-config-section {
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .api-config-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .api-config-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .api-config-content {
+            display: none;
+        }
+
+        .api-config-content.show {
+            display: block;
+        }
+
+        /* ==================== 读者类型说明卡片 ==================== */
+        .reader-type-card {
+            background: #f9f9f9;
+            border-left: 4px solid var(--primary-color);
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .reader-type-card h4 {
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            font-size: 1em;
+        }
+
+        .reader-type-card p {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        .reader-type-card .role-tag {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        /* ==================== 多文章标签页 ==================== */
+        .article-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .article-tab {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .article-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .article-tab:hover:not(.active) {
+            background: #e0e0e0;
+        }
+
+        /* ==================== OCR上传区域 ==================== */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: #f0f8ff;
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background: #e6f7ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-placeholder p {
+            margin: 8px 0;
+            color: var(--text-primary);
+        }
+
+        .file-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .file-item-icon {
+            font-size: 24px;
+        }
+
+        .file-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .file-item-size {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .file-item-remove {
+            padding: 6px 12px;
+            background: #fff1f0;
+            color: var(--error-color);
+            border: 1px solid #ffa39e;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-item-remove:hover {
+            background: var(--error-color);
+            color: white;
+        }
+
+        /* ==================== OCR进度条 ==================== */
+        .ocr-progress {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: var(--border-radius);
+            border: 1px solid #b3d8ff;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e6f7ff;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            border-radius: 15px;
+            transition: width 0.3s ease;
+            width: 0%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--text-primary);
+            font-weight: 500;
+            margin: 0;
+        }
+
+        /* ==================== OCR结果 ==================== */
+        .ocr-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        .ocr-result h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .ocr-result textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            background: white;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页面头部 -->
+        <div class="header">
+            <h1>🐱 黑阿猫创作助手 V3</h1>
+            <p>微信公众号内容创作工作流工具 - 多文章生成版</p>
+            <div class="badge">✨ 支持一次生成两篇文章 + 自动生成5个公众号标题</div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- 选项卡导航 -->
+            <div class="tabs">
+                <button class="tab active" data-tab="manual">📝 手动创作</button>
+                <button class="tab" data-tab="paste">📋 文字粘贴</button>
+                <button class="tab" data-tab="ocr">📷 图片/PDF识别</button>
+                <button class="tab" data-tab="url">🔗 URL抓取</button>
+                <button class="tab" data-tab="api">⚙️ API配置</button>
+            </div>
+
+            <!-- 手动创作选项卡 -->
+            <div class="tab-content active" id="manualTab">
+                <!-- 参数输入区域 -->
+                <div class="card form-section">
+                    <h2 class="card-title">📝 创作参数配置</h2>
+
+                    <form id="createForm">
+                        <div class="form-group">
+                            <label>目标读者<span class="required">*</span></label>
+                            <select id="targetAudience" required>
+                                <option value="">请选择...</option>
+                                <option value="general">普通大众 / 吃瓜群众</option>
+                                <option value="creator">自媒体 / 内容创作者</option>
+                                <option value="business">产品 / 运营 / 商业人</option>
+                                <option value="tech">技术从业者</option>
+                                <option value="emotional">情绪共鸣型读者</option>
+                            </select>
+                            <div class="hint" id="audienceHint">选择目标读者后，系统会自动匹配最合适的写作风格和叙事结构</div>
+                        </div>
+
+                        <!-- 读者类型说明（动态显示） -->
+                        <div id="readerTypeExplanation"></div>
+
+                        <div class="form-group">
+                            <label>选题主题<span class="required">*</span></label>
+                            <input type="text" id="topic" placeholder="例如：AI大模型的技术发展趋势与应用前景" required>
+                            <div class="hint">清晰明确的文章主题</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>核心观点<span class="required">*</span></label>
+                            <textarea id="coreView" rows="4" placeholder="例如：&#10;1. AI大模型正在从通用型向垂直领域深化&#10;2. 多模态融合是下一个技术突破口&#10;3. 实际应用场景落地是关键挑战" required></textarea>
+                            <div class="hint">列出3-5个核心观点，每行一个</div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>字数要求<span class="required">*</span></label>
+                                <input type="number" id="wordCount" value="1500" min="500" max="5000" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>关键词标签</label>
+                                <input type="text" id="keywords" placeholder="例如：AI, 大模型, 人工智能, ChatGPT">
+                                <div class="hint">用逗号分隔多个关键词</div>
+                            </div>
+                        </div>
+
+                        <div class="form-row-3">
+                            <div class="form-group">
+                                <label>选择AI模型</label>
+                                <select id="aiModel">
+                                    <option value="deepseek">DeepSeek</option>
+                                    <option value="doubao">豆包</option>
+                                    <option value="kimi">Kimi</option>
+                                    <option value="tongyi">通义千问</option>
+                                    <option value="simulate">模拟模式（无API）</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>原文语言</label>
+                                <select id="sourceLanguage">
+                                    <option value="zh">中文</option>
+                                    <option value="en">英文</option>
+                                    <option value="auto">自动检测</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>生成数量</label>
+                                <select id="articleCount">
+                                    <option value="1">生成1篇文章</option>
+                                    <option value="2" selected>生成2篇文章</option>
+                                </select>
+                                <div class="hint">一次生成多篇文章，丰富内容选择</div>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary" id="startWorkflowBtn">
+                                <span>🚀</span> 启动创作工作流
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearBtn">
+                                <span>🗑️</span> 清空
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 图片/PDF识别选项卡 -->
+            <div class="tab-content" id="ocrTab">
+                <div class="card form-section">
+                    <h2 class="card-title">📷 图片/PDF文字识别</h2>
+
+                    <div class="form-group">
+                        <label>上传图片或PDF<span class="required">*</span></label>
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" id="ocrFileInput" accept="image/*,application/pdf" multiple style="display: none;">
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <div class="upload-icon">📁</div>
+                                <p>点击或拖拽文件到此处</p>
+                                <p class="hint">支持图片（JPG、PNG、GIF）和PDF文件</p>
+                                <p class="hint">可一次性上传多个文件</p>
+                            </div>
+                            <div class="file-list" id="fileList"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>识别语言</label>
+                        <select id="ocrLanguage">
+                            <option value="chi_sim">简体中文</option>
+                            <option value="chi_tra">繁体中文</option>
+                            <option value="eng">英文</option>
+                            <option value="chi_sim+eng">中英文混合</option>
+                            <option value="jpn">日语</option>
+                            <option value="kor">韩语</option>
+                        </select>
+                        <div class="hint">选择要识别的文字语言</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>目标读者<span class="required">*</span></label>
+                            <select id="ocrTargetAudience" required>
+                                <option value="">请选择...</option>
+                                <option value="general">普通大众 / 吃瓜群众</option>
+                                <option value="creator">自媒体 / 内容创作者</option>
+                                <option value="business">产品 / 运营 / 商业人</option>
+                                <option value="tech">技术从业者</option>
+                                <option value="emotional">情绪共鸣型读者</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>识别后操作</label>
+                            <select id="ocrAction">
+                                <option value="copy">仅复制到剪贴板</option>
+                                <option value="paste">复制到文字粘贴</option>
+                                <option value="rewrite">识别后智能改写</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" id="startOcrBtn">
+                            <span>🔍</span> 开始识别
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="clearOcrBtn">
+                            <span>🗑️</span> 清空
+                        </button>
+                    </div>
+
+                    <!-- 识别进度 -->
+                    <div class="ocr-progress" id="ocrProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">正在识别...</p>
+                    </div>
+
+                    <!-- 识别结果 -->
+                    <div class="ocr-result" id="ocrResult" style="display: none;">
+                        <h3>识别结果</h3>
+                        <textarea id="ocrOutput" rows="12" readonly></textarea>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-success" id="copyOcrResultBtn">
+                                <span>📋</span> 复制结果
+                            </button>
+                            <button type="button" class="btn btn-primary" id="rewriteOcrResultBtn">
+                                <span>✍️</span> 智能改写
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文字粘贴选项卡 -->
+            <div class="tab-content" id="pasteTab">
+                <div class="card form-section">
+                    <h2 class="card-title">📋 文字内容粘贴与重写</h2>
+
+                    <div class="form-group">
+                        <label>目标读者<span class="required">*</span></label>
+                        <select id="pasteTargetAudience" required>
+                            <option value="">请选择...</option>
+                            <option value="general">普通大众 / 吃瓜群众</option>
+                            <option value="creator">自媒体 / 内容创作者</option>
+                            <option value="business">产品 / 运营 / 商业人</option>
+                            <option value="tech">技术从业者</option>
+                            <option value="emotional">情绪共鸣型读者</option>
+                        </select>
+                        <div class="hint">选择目标读者，系统会自动适配写作风格</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>粘贴内容<span class="required">*</span></label>
+                        <textarea id="pasteContent" rows="12" placeholder="将需要改写的文章内容粘贴到这里...
+
+支持：
+- 文章初稿的润色和改写
+- 学术论文转化为通俗文章
+- 技术文档转化为科普内容
+- 长文提炼和精简
+- 调整文风以适应不同读者群体"></textarea>
+                        <div class="hint">粘贴原始文章内容，系统会根据目标读者自动改写</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>改写方向</label>
+                            <select id="rewriteDirection">
+                                <option value="adaptive">智能适配（根据目标读者自动调整）</option>
+                                <option value="simplify">简化（更通俗易懂）</option>
+                                <option value="deepen">深化（增加深度和专业性）</option>
+                                <option value="shorten">精简（提炼要点）</option>
+                                <option value="expand">扩展（补充细节）</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>额外要求（可选）</label>
+                            <textarea id="pasteExtraNotes" rows="3" placeholder="例如：&#10;- 保留核心案例&#10;- 增加数据分析&#10;- 调整语气更轻松"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" id="pasteRewriteBtn">
+                            <span>✍️</span> 智能改写
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="clearPasteBtn">
+                            <span>🗑️</span> 清空
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL抓取选项卡 -->
+            <div class="tab-content" id="urlTab">
+                <div class="card form-section">
+                    <h2 class="card-title">🔗 URL文章抓取与重写</h2>
+
+                    <div class="form-group">
+                        <label>目标读者<span class="required">*</span></label>
+                        <select id="urlTargetAudience" required>
+                            <option value="">请选择...</option>
+                            <option value="general">普通大众 / 吃瓜群众</option>
+                            <option value="creator">自媒体 / 内容创作者</option>
+                            <option value="business">产品 / 运营 / 商业人</option>
+                            <option value="tech">技术从业者</option>
+                            <option value="emotional">情绪共鸣型读者</option>
+                        </select>
+                        <div class="hint">系统会根据目标读者自动调整写作风格</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>文章链接<span class="required">*</span></label>
+                        <input type="text" id="articleUrl" placeholder="粘贴文章链接，支持中文和英文网站">
+                        <div class="hint">注意：由于浏览器安全限制，某些网站可能无法直接抓取</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>链接类型</label>
+                            <select id="urlType">
+                                <option value="chinese">中文文章</option>
+                                <option value="english">英文文章</option>
+                                <option value="auto">自动检测</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>改写方向</label>
+                            <select id="urlRewriteDirection">
+                                <option value="adaptive">智能适配（根据目标读者自动调整）</option>
+                                <option value="simplify">简化（更通俗易懂）</option>
+                                <option value="deepen">深化（增加深度和专业性）</option>
+                                <option value="shorten">精简（提炼要点）</option>
+                                <option value="expand">扩展（补充细节）</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>额外要求（可选）</label>
+                        <textarea id="urlExtraNotes" rows="3" placeholder="例如：&#10;- 增加更多案例&#10;- 调整语气更轻松&#10;- 补充最新的数据"></textarea>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" id="fetchUrlBtn">
+                            <span>🌐</span> 抓取并改写文章
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="clearUrlBtn">
+                            <span>🗑️</span> 清空
+                        </button>
+                    </div>
+
+                    <!-- 总结预览区域 -->
+                    <div class="summary-preview" id="summaryPreview" style="display: none;">
+                        <div class="summary-preview-title">📋 原文总结</div>
+                        <div id="summaryContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API配置选项卡 -->
+            <div class="tab-content" id="apiTab">
+                <div class="card">
+                    <h2 class="card-title">⚙️ AI模型API配置</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                        配置您的API密钥后，可以使用真实的大模型进行内容生成。API密钥将保存在浏览器本地存储中。
+                    </p>
+
+                    <div class="api-config-section">
+                        <div class="api-config-title">
+                            <span class="api-config-toggle" onclick="toggleApiConfig('deepseek')">
+                                <span id="deepseekToggle">▶</span> DeepSeek API
+                            </span>
+                        </div>
+                        <div class="api-config-content" id="deepseekConfig">
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="password" id="deepseekApiKey" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+                                <div class="hint">获取地址：<a href="https://platform.deepseek.com/" target="_blank">https://platform.deepseek.com/</a></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>API Base URL</label>
+                                    <input type="text" id="deepseekBaseUrl" value="https://api.deepseek.com/v1">
+                                </div>
+                                <div class="form-group">
+                                    <label>模型名称</label>
+                                    <input type="text" id="deepseekModel" value="deepseek-chat">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success" onclick="saveApiKey('deepseek')">💾 保存配置</button>
+                            <button type="button" class="btn btn-secondary" onclick="testApiKey('deepseek')">🧪 测试连接</button>
+                        </div>
+                    </div>
+
+                    <div class="api-config-section">
+                        <div class="api-config-title">
+                            <span class="api-config-toggle" onclick="toggleApiConfig('doubao')">
+                                <span id="doubaoToggle">▶</span> 豆包 API
+                            </span>
+                        </div>
+                        <div class="api-config-content" id="doubaoConfig">
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="password" id="doubaoApiKey" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                                <div class="hint">获取地址：<a href="https://console.volcengine.com/ark" target="_blank">https://console.volcengine.com/ark</a></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>API Base URL</label>
+                                    <input type="text" id="doubaoBaseUrl" value="https://ark.cn-beijing.volces.com/api/v3">
+                                </div>
+                                <div class="form-group">
+                                    <label>模型名称</label>
+                                    <input type="text" id="doubaoModel" value="ep-20241201234567-xxxxx">
+                                    <div class="hint">请填入您的模型端点ID</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success" onclick="saveApiKey('doubao')">💾 保存配置</button>
+                            <button type="button" class="btn btn-secondary" onclick="testApiKey('doubao')">🧪 测试连接</button>
+                        </div>
+                    </div>
+
+                    <div class="api-config-section">
+                        <div class="api-config-title">
+                            <span class="api-config-toggle" onclick="toggleApiConfig('kimi')">
+                                <span id="kimiToggle">▶</span> Kimi API
+                            </span>
+                        </div>
+                        <div class="api-config-content" id="kimiConfig">
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="password" id="kimiApiKey" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+                                <div class="hint">获取地址：<a href="https://platform.moonshot.cn/" target="_blank">https://platform.moonshot.cn/</a></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>API Base URL</label>
+                                    <input type="text" id="kimiBaseUrl" value="https://api.moonshot.cn/v1">
+                                </div>
+                                <div class="form-group">
+                                    <label>模型名称</label>
+                                    <input type="text" id="kimiModel" value="moonshot-v1-8k">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success" onclick="saveApiKey('kimi')">💾 保存配置</button>
+                            <button type="button" class="btn btn-secondary" onclick="testApiKey('kimi')">🧪 测试连接</button>
+                        </div>
+                    </div>
+
+                    <div class="api-config-section">
+                        <div class="api-config-title">
+                            <span class="api-config-toggle" onclick="toggleApiConfig('tongyi')">
+                                <span id="tongyiToggle">▶</span> 通义千问 API
+                            </span>
+                        </div>
+                        <div class="api-config-content" id="tongyiConfig">
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="password" id="tongyiApiKey" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+                                <div class="hint">获取地址：<a href="https://dashscope.aliyuncs.com/" target="_blank">https://dashscope.aliyuncs.com/</a></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>API Base URL</label>
+                                    <input type="text" id="tongyiBaseUrl" value="https://dashscope.aliyuncs.com/compatible-mode/v1">
+                                </div>
+                                <div class="form-group">
+                                    <label>模型名称</label>
+                                    <input type="text" id="tongyiModel" value="qwen-plus">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success" onclick="saveApiKey('tongyi')">💾 保存配置</button>
+                            <button type="button" class="btn btn-secondary" onclick="testApiKey('tongyi')">🧪 测试连接</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 进度展示区域 -->
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <h3 class="progress-title">⚡ 创作流程进度</h3>
+                <div class="progress-steps" id="progressSteps">
+                    <div class="step-item pending" id="step1">
+                        <div class="step-icon">1</div>
+                        <div class="step-label">选题校验</div>
+                        <div class="step-status">待执行</div>
+                    </div>
+                    <div class="step-item pending" id="step2">
+                        <div class="step-icon">2</div>
+                        <div class="step-label">AI生成初稿</div>
+                        <div class="step-status">待执行</div>
+                    </div>
+                    <div class="step-item pending" id="step3">
+                        <div class="step-icon">3</div>
+                        <div class="step-label">标题创作</div>
+                        <div class="step-status">待执行</div>
+                    </div>
+                    <div class="step-item pending" id="step4">
+                        <div class="step-icon">4</div>
+                        <div class="step-label">排版建议生成</div>
+                        <div class="step-status">待执行</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果展示区域 -->
+            <div class="results-section" id="resultsSection">
+                <!-- 文章1卡片 -->
+                <div class="result-card" id="articleCard1">
+                    <div class="result-card-header">
+                        <h3 class="result-card-title">📄 文章 1</h3>
+                        <button type="button" class="btn btn-success copy-btn" data-target="articleContent1">
+                            <span>📋</span> 复制
+                        </button>
+                    </div>
+                    <div class="result-content" id="articleContent1"></div>
+                </div>
+
+                <!-- 文章2卡片 -->
+                <div class="result-card" id="articleCard2">
+                    <div class="result-card-header">
+                        <h3 class="result-card-title">📄 文章 2</h3>
+                        <button type="button" class="btn btn-success copy-btn" data-target="articleContent2">
+                            <span>📋</span> 复制
+                        </button>
+                    </div>
+                    <div class="result-content" id="articleContent2"></div>
+                </div>
+
+                <!-- 标题创作卡片 -->
+                <div class="result-card" id="titleCard">
+                    <div class="result-card-header">
+                        <h3 class="result-card-title">🎯 公众号标题 (5个)</h3>
+                        <button type="button" class="btn btn-success copy-btn" data-target="titleContent">
+                            <span>📋</span> 复制
+                        </button>
+                    </div>
+                    <div class="result-content" id="titleContent"></div>
+                </div>
+
+                <!-- 排版建议卡片 -->
+                <div class="result-card" id="formatCard">
+                    <div class="result-card-header">
+                        <h3 class="result-card-title">📐 排版建议</h3>
+                        <button type="button" class="btn btn-success copy-btn" data-target="formatContent">
+                            <span>📋</span> 复制
+                        </button>
+                    </div>
+                    <div class="result-content" id="formatContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩层 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">正在处理...</div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="toast" id="toast">✅ 操作成功</div>
+
+    <script>
+        /**
+         * ============================================
+         * 黑阿猫微信公众号创作工具 V3 (多文章生成版)
+         * ============================================
+         * 核心特性：
+         * 1. 完全由目标读者决定的写作系统
+         * 2. 支持一次生成两篇文章
+         * 3. 根据文章内容生成5个公众号标题
+         * 4. 动态作者身份切换
+         * 5. 读者适配的叙事结构
+         * 6. 支持文字粘贴功能
+         * 7. URL抓取与智能改写
+         * 8. 多模型API集成
+         * ============================================
+         */
+
+        // ==================== 应用状态管理 ====================
+        const AppState = {
+            currentStep: 0,
+            generatedData: {
+                articles: [],
+                titles: [],
+                format: ''
+            },
+            apiConfig: {},
+            currentTab: 'manual'
+        };
+
+        // ==================== 读者群体配置 ====================
+        const audienceProfiles = {
+            general: {
+                name: '普通大众 / 吃瓜群众',
+                role: '会讲故事的旁观者',
+                characteristics: {
+                    cognitiveLevel: '低专业背景，依赖生活常识',
+                    languagePreference: '口语化、生活化、讲故事',
+                    attentionSpan: '短，需要冲突和反转维持兴趣',
+                    motivation: '好奇心、八卦心理、情感共鸣'
+                },
+                narrativeStructure: `事件 → 冲突 → 反转 → 为什么会这样`,
+                writingStyle: `像聊天一样自然，用生活场景做类比，不讲大道理`,
+                technicalConstraint: `❌ 禁止出现专业术语，必须用生活化类比`,
+                toneGuidelines: [
+                    '克制表达，不煽情',
+                    '用"我注意到"而非"我认为"',
+                    '多讲故事，少讲道理'
+                ]
+            },
+            creator: {
+                name: '自媒体 / 内容创作者',
+                role: '拆套路、讲方法的同行',
+                characteristics: {
+                    cognitiveLevel: '有创作经验，懂方法论',
+                    languagePreference: '专业但不晦涩，强调可操作性',
+                    attentionSpan: '中等，重视干货密度',
+                    motivation: '学到可复用的方法和技巧'
+                },
+                narrativeStructure: `现象 → 套路 → 可复用经验 → 风险提醒`,
+                writingStyle: `深度剖析爆款案例背后的方法论，实用性强`,
+                technicalConstraint: `✅ 允许专业术语，但需配合实战案例`,
+                toneGuidelines: [
+                    '直接、不绕弯子',
+                    '用"我试过"替代"据说"',
+                    '强调数据和结果'
+                ]
+            },
+            business: {
+                name: '产品 / 运营 / 商业人',
+                role: '分析现象背后逻辑的观察者',
+                characteristics: {
+                    cognitiveLevel: '高，有商业思维',
+                    languagePreference: '数据驱动、逻辑严密',
+                    attentionSpan: '长，重视深度分析',
+                    motivation: '洞察商业趋势，发现机会'
+                },
+                narrativeStructure: `表象 → 激励机制 → 利益分配 → 长期影响`,
+                writingStyle: `商业视角分析，数据驱动，洞察趋势`,
+                technicalConstraint: `✅ 允许商业/技术术语，需有数据支撑`,
+                toneGuidelines: [
+                    '客观、中立',
+                    '用"数据显示"替代"我觉得"',
+                    '关注ROI和可持续性'
+                ]
+            },
+            tech: {
+                name: '技术从业者',
+                role: '冷静拆解系统和机制的分析者',
+                characteristics: {
+                    cognitiveLevel: '极高，技术背景深厚',
+                    languagePreference: '精确、严谨、专业',
+                    attentionSpan: '长，重视技术细节',
+                    motivation: '理解技术原理，学习最佳实践'
+                },
+                narrativeStructure: `现象 → 触发条件 → 系统反应 → 结果`,
+                writingStyle: `技术细节透彻，逻辑严密，专业度高`,
+                technicalConstraint: `✅ 鼓励专业术语，鼓励深入技术细节`,
+                toneGuidelines: [
+                    '精确、不夸大',
+                    '用"实测数据"替代"理论上"',
+                    '提供代码示例或架构图'
+                ]
+            },
+            emotional: {
+                name: '情绪共鸣型读者',
+                role: '代替他们说出心里话的人',
+                characteristics: {
+                    cognitiveLevel: '情感导向，不追求逻辑严密',
+                    languagePreference: '感性、温柔、有温度',
+                    attentionSpan: '看心情，重视情感连接',
+                    motivation: '找到理解、获得安慰、被看见'
+                },
+                narrativeStructure: `情感场景 → 痛点共鸣 → 故事讲述 → 情感升华`,
+                writingStyle: `情感共鸣，故事性强，触动人心`,
+                technicalConstraint: `❌ 严格禁止专业术语，一切为情感让路`,
+                toneGuidelines: [
+                    '温柔、有同理心',
+                    '用"我们都曾"替代"你应该"',
+                    '多用问句引导思考'
+                ]
+            }
+        };
+
+        // ==================== DOM元素引用 ====================
+        const elements = {
+            // 手动创作表单
+            targetAudience: document.getElementById('targetAudience'),
+            pasteTargetAudience: document.getElementById('pasteTargetAudience'),
+            urlTargetAudience: document.getElementById('urlTargetAudience'),
+            ocrTargetAudience: document.getElementById('ocrTargetAudience'),
+            readerTypeExplanation: document.getElementById('readerTypeExplanation'),
+            audienceHint: document.getElementById('audienceHint'),
+            topic: document.getElementById('topic'),
+            coreView: document.getElementById('coreView'),
+            wordCount: document.getElementById('wordCount'),
+            keywords: document.getElementById('keywords'),
+            aiModel: document.getElementById('aiModel'),
+            sourceLanguage: document.getElementById('sourceLanguage'),
+            articleCount: document.getElementById('articleCount'),
+            createForm: document.getElementById('createForm'),
+
+            // 文字粘贴相关
+            pasteContent: document.getElementById('pasteContent'),
+            rewriteDirection: document.getElementById('rewriteDirection'),
+            pasteExtraNotes: document.getElementById('pasteExtraNotes'),
+            urlRewriteDirection: document.getElementById('urlRewriteDirection'),
+
+            // URL相关
+            articleUrl: document.getElementById('articleUrl'),
+            urlType: document.getElementById('urlType'),
+            urlExtraNotes: document.getElementById('urlExtraNotes'),
+            summaryPreview: document.getElementById('summaryPreview'),
+            summaryContent: document.getElementById('summaryContent'),
+
+            // 按钮
+            startWorkflowBtn: document.getElementById('startWorkflowBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            pasteRewriteBtn: document.getElementById('pasteRewriteBtn'),
+            clearPasteBtn: document.getElementById('clearPasteBtn'),
+            fetchUrlBtn: document.getElementById('fetchUrlBtn'),
+            clearUrlBtn: document.getElementById('clearUrlBtn'),
+
+            // OCR相关元素
+            ocrFileInput: document.getElementById('ocrFileInput'),
+            uploadArea: document.getElementById('uploadArea'),
+            uploadPlaceholder: document.getElementById('uploadPlaceholder'),
+            fileList: document.getElementById('fileList'),
+            ocrLanguage: document.getElementById('ocrLanguage'),
+            ocrAction: document.getElementById('ocrAction'),
+            startOcrBtn: document.getElementById('startOcrBtn'),
+            clearOcrBtn: document.getElementById('clearOcrBtn'),
+            ocrProgress: document.getElementById('ocrProgress'),
+            progressFill: document.getElementById('progressFill'),
+            progressText: document.getElementById('progressText'),
+            ocrResult: document.getElementById('ocrResult'),
+            ocrOutput: document.getElementById('ocrOutput'),
+            copyOcrResultBtn: document.getElementById('copyOcrResultBtn'),
+            rewriteOcrResultBtn: document.getElementById('rewriteOcrResultBtn'),
+
+            // 进度和结果
+            progressSection: document.getElementById('progressSection'),
+            resultsSection: document.getElementById('resultsSection'),
+            articleCard1: document.getElementById('articleCard1'),
+            articleCard2: document.getElementById('articleCard2'),
+            titleCard: document.getElementById('titleCard'),
+            formatCard: document.getElementById('formatCard'),
+            articleContent1: document.getElementById('articleContent1'),
+            articleContent2: document.getElementById('articleContent2'),
+            titleContent: document.getElementById('titleContent'),
+            formatContent: document.getElementById('formatContent'),
+
+            // 加载和提示
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            loadingText: document.getElementById('loadingText'),
+            toast: document.getElementById('toast')
+        };
+
+        // ==================== 初始化事件监听 ====================
+        function initEventListeners() {
+            // 选项卡切换
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+
+            // 目标读者选择监听
+            elements.targetAudience.addEventListener('change', (e) => {
+                updateReaderTypeExplanation(e.target.value);
+            });
+
+            elements.pasteTargetAudience.addEventListener('change', (e) => {
+                // 可以添加动态提示
+            });
+
+            elements.urlTargetAudience.addEventListener('change', (e) => {
+                // 可以添加动态提示
+            });
+
+            // OCR上传区域事件
+            elements.uploadArea.addEventListener('click', (e) => {
+                if (e.target === elements.uploadArea || e.target.closest('.upload-placeholder')) {
+                    elements.ocrFileInput.click();
+                }
+            });
+
+            elements.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                elements.uploadArea.classList.add('dragover');
+            });
+
+            elements.uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                elements.uploadArea.classList.remove('dragover');
+            });
+
+            elements.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                elements.uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            elements.ocrFileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            // OCR按钮事件
+            elements.startOcrBtn.addEventListener('click', startOCR);
+            elements.clearOcrBtn.addEventListener('click', clearOCR);
+            elements.copyOcrResultBtn.addEventListener('click', () => {
+                copyText(elements.ocrOutput.value);
+            });
+            elements.rewriteOcrResultBtn.addEventListener('click', rewriteOCRResult);
+
+            // 按钮事件
+            elements.startWorkflowBtn.addEventListener('click', startWorkflow);
+            elements.clearBtn.addEventListener('click', clearForm);
+            elements.pasteRewriteBtn.addEventListener('click', pasteAndRewrite);
+            elements.clearPasteBtn.addEventListener('click', clearPasteForm);
+            elements.fetchUrlBtn.addEventListener('click', fetchAndRewriteArticle);
+            elements.clearUrlBtn.addEventListener('click', clearUrlForm);
+
+            // 复制按钮事件委托
+            elements.resultsSection.addEventListener('click', (e) => {
+                if (e.target.closest('.copy-btn')) {
+                    const btn = e.target.closest('.copy-btn');
+                    const targetId = btn.dataset.target;
+                    copyContent(targetId);
+                }
+            });
+
+            // 标题项点击复制
+            elements.titleContent.addEventListener('click', (e) => {
+                if (e.target.classList.contains('title-item')) {
+                    copyText(e.target.textContent);
+                }
+            });
+
+            // 加载保存的API配置
+            loadSavedApiConfigs();
+        }
+
+        // ==================== 更新读者类型说明 ====================
+        function updateReaderTypeExplanation(audienceKey) {
+            const profile = audienceProfiles[audienceKey];
+            if (!profile) {
+                elements.readerTypeExplanation.innerHTML = '';
+                return;
+            }
+
+            const html = `
+                <div class="reader-type-card">
+                    <span class="role-tag">${profile.role}</span>
+                    <h4>${profile.name}</h4>
+                    <p><strong>认知特点：</strong>${profile.characteristics.cognitiveLevel}</p>
+                    <p><strong>语言偏好：</strong>${profile.characteristics.languagePreference}</p>
+                    <p><strong>叙事结构：</strong>${profile.narrativeStructure}</p>
+                    <p><strong>技术约束：</strong>${profile.technicalConstraint}</p>
+                </div>
+            `;
+
+            elements.readerTypeExplanation.innerHTML = html;
+        }
+
+        // ==================== 选项卡切换 ====================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === tabName + 'Tab');
+            });
+
+            AppState.currentTab = tabName;
+        }
+
+        // ==================== 生成读者驱动的提示词 ====================
+        function generateReaderDrivenPrompt(params, articleIndex = 1) {
+            const profile = audienceProfiles[params.targetAudience];
+            if (!profile) {
+                throw new Error('无效的目标读者类型');
+            }
+
+            const variationNote = articleIndex === 1
+                ? '这是第一篇文章，请采用标准的叙事结构。'
+                : '这是第二篇文章，请与第一篇文章有所区别，尝试不同的切入角度或案例，保持核心观点但变换表达方式。';
+
+            return `
+【目标读者】
+${profile.name}
+- 认知特点：${profile.characteristics.cognitiveLevel}
+- 语言偏好：${profile.characteristics.languagePreference}
+- 注意力特点：${profile.characteristics.attentionSpan}
+- 阅读动机：${profile.characteristics.motivation}
+
+【你的身份】
+你是：${profile.role}
+
+【写作主题】
+${params.topic}
+
+【核心观点】
+${params.coreView}
+
+【文章变化要求】
+${variationNote}
+
+==================== 一、读者驱动原则（必须严格遵守）====================
+
+1. 你写的不是"正确的文章"，而是"这个读者愿意看完的文章"
+2. 你不能炫耀知识，只能使用该读者天然能理解的语言
+3. 如果内容让该读者觉得"这不是写给我的"，请立刻改写
+
+==================== 二、叙事结构 ====================
+
+请严格遵循以下叙事结构：
+${profile.narrativeStructure}
+
+==================== 三、技术内容使用规则 ====================
+
+${profile.technicalConstraint}
+
+==================== 四、语气指南 ====================
+
+${profile.toneGuidelines.map(guideline => `- ${guideline}`).join('\n')}
+
+==================== 五、输出要求 ====================
+
+- 目标字数：${params.wordCount}字
+- 语言：自然、像真人写的，不要总结腔
+- 语气：克制、有判断，但不说教
+- 篇幅：公众号中等长度
+
+❌ 绝对禁止使用：
+- "从某种意义上说"
+- "本质上"
+- "我们可以看到"
+- 任何 AI 常用总结句式
+
+==================== 六、最终自检（必须执行）====================
+
+在输出正文前，请你自查：
+1. 是否出现不符合目标读者认知的内容
+2. 是否有"我知道但你不需要知道"的段落
+3. 是否有明显 AI 味或模板味
+
+如有，请直接删除或重写。
+
+==================== 开始创作 ====================
+
+请根据以上要求，创作一篇符合${profile.name}阅读习惯的微信公众号文章。
+`;
+        }
+
+        // ==================== 启动手动创作工作流 ====================
+        async function startWorkflow() {
+            if (!validateForm()) {
+                return;
+            }
+
+            elements.progressSection.style.display = 'block';
+            elements.resultsSection.style.display = 'grid';
+            elements.startWorkflowBtn.disabled = true;
+
+            // 隐藏之前的文章2卡片（如果只生成1篇）
+            const articleCount = parseInt(elements.articleCount.value);
+
+            try {
+                await executeStep(1, validateTopic);
+                await executeStep(2, generateArticles);
+                await executeStep(3, generateTitles);
+                await executeStep(4, generateFormat);
+
+                showToast('✅ 创作工作流已完成！');
+            } catch (error) {
+                showToast('❌ 工作流执行失败：' + error.message, true);
+            } finally {
+                elements.startWorkflowBtn.disabled = false;
+            }
+        }
+
+        async function executeStep(stepNumber, stepFunction) {
+            const stepElement = document.getElementById(`step${stepNumber}`);
+            updateStepStatus(stepElement, 'processing');
+
+            try {
+                await stepFunction();
+                updateStepStatus(stepElement, 'completed');
+            } catch (error) {
+                updateStepStatus(stepElement, 'failed');
+                throw error;
+            }
+        }
+
+        function updateStepStatus(stepElement, status) {
+            // 移除所有状态类
+            stepElement.classList.remove('pending', 'processing', 'completed', 'failed');
+            stepElement.classList.add(status);
+
+            // 获取步骤序号
+            const stepNumber = stepElement.id.replace('step', '');
+            const iconElement = stepElement.querySelector('.step-icon');
+            const statusElement = stepElement.querySelector('.step-status');
+
+            // 根据状态更新图标和文字
+            switch (status) {
+                case 'pending':
+                    iconElement.textContent = stepNumber;
+                    statusElement.textContent = '待执行';
+                    break;
+                case 'processing':
+                    iconElement.textContent = '⚙';
+                    statusElement.textContent = '执行中...';
+                    break;
+                case 'completed':
+                    iconElement.textContent = '✓';
+                    statusElement.textContent = '已完成';
+                    // 更新进度条连接线
+                    updateProgressBar(stepNumber);
+                    break;
+                case 'failed':
+                    iconElement.textContent = '✗';
+                    statusElement.textContent = '失败';
+                    break;
+            }
+        }
+
+        // 更新进度条连接线颜色
+        function updateProgressBar(completedStepNumber) {
+            const progressSteps = document.getElementById('progressSteps');
+            // 移除所有完成状态类
+            progressSteps.classList.remove(
+                'step-1-completed',
+                'step-2-completed',
+                'step-3-completed',
+                'step-4-completed'
+            );
+            // 添加当前完成状态类
+            progressSteps.classList.add(`step-${completedStepNumber}-completed`);
+        }
+
+        async function validateTopic() {
+            showLoading('🔍 正在分析目标读者...');
+            const params = getFormParams();
+            await simulateDelay(1000);
+
+            if (params.topic.length < 5) {
+                throw new Error('选题主题过短');
+            }
+
+            if (params.coreView.split('\n').filter(v => v.trim()).length < 2) {
+                throw new Error('请至少提供2个核心观点');
+            }
+
+            hideLoading();
+            showToast('✅ 读者分析完成');
+        }
+
+        // ==================== 生成多篇文章 ====================
+        async function generateArticles() {
+            const params = getFormParams();
+            const articleCount = parseInt(elements.articleCount.value);
+            const aiModel = elements.aiModel.value;
+            const apiConfig = getApiConfig(aiModel);
+
+            AppState.generatedData.articles = [];
+
+            for (let i = 1; i <= articleCount; i++) {
+                showLoading(`✍️ 正在生成第 ${i} 篇文章...`);
+
+                let article;
+                if (aiModel === 'simulate') {
+                    await simulateDelay(2000);
+                    article = generateSimulatedArticle(params, i);
+                } else {
+                    const prompt = generateReaderDrivenPrompt(params, i);
+                    article = await callAIModel(aiModel, apiConfig, prompt);
+                }
+
+                AppState.generatedData.articles.push(article);
+
+                // 显示文章内容
+                if (i === 1) {
+                    elements.articleContent1.textContent = article;
+                    elements.articleCard1.classList.add('show');
+                } else if (i === 2) {
+                    elements.articleContent2.textContent = article;
+                    elements.articleCard2.classList.add('show');
+                }
+            }
+
+            hideLoading();
+            showToast(`✅ 已生成 ${articleCount} 篇文章`);
+        }
+
+        function generateSimulatedArticle(params, articleIndex) {
+            const profile = audienceProfiles[params.targetAudience];
+            const views = params.coreView.split('\n').filter(v => v.trim());
+
+            const articleType = articleIndex === 1 ? '（版本一）' : '（版本二 - 不同角度）';
+
+            let article = `# ${params.topic} ${articleType}\n\n`;
+            article += `## 引言\n\n`;
+            article += `作为${profile.role}，我想和大家聊聊${params.topic}。\n\n`;
+            article += `这篇文章会按照"${profile.narrativeStructure}"的逻辑展开。\n\n`;
+
+            views.forEach((view, index) => {
+                article += `## ${index + 1}. ${view.trim()}\n\n`;
+                article += `### 为什么这重要\n`;
+                article += `从${profile.name}的角度来看...\n\n`;
+                article += `### 具体分析\n`;
+                article += `- 要点一：详细说明\n`;
+                article += `- 要点二：数据/案例支撑\n`;
+                article += `- 要点三：应用建议\n\n`;
+            });
+
+            article += `## 总结\n\n`;
+            article += `希望这篇文章对${profile.name}有所帮助。\n\n`;
+            article += `感谢阅读，欢迎点赞、在看、转发！\n`;
+
+            return article;
+        }
+
+        // ==================== 生成5个标题 ====================
+        async function generateTitles() {
+            showLoading('🎯 正在创作标题...');
+            const params = getFormParams();
+            const aiModel = elements.aiModel.value;
+            const apiConfig = getApiConfig(aiModel);
+
+            // 获取第一篇文章内容用于生成标题
+            const articleContent = AppState.generatedData.articles[0] || '';
+
+            if (aiModel === 'simulate') {
+                await simulateDelay(1000);
+                const titles = {
+                    all: [
+                        `🔥 ${params.topic}：为什么90%的人都理解错了？`,
+                        `💡 揭秘${params.topic}的真相，看完这篇就够了`,
+                        `⚡ ${params.topic}大爆发！这3个关键信号你必须知道`,
+                        `🎯 不看后悔！${params.topic}其实没那么难`,
+                        `📖 ${params.topic}完全指南：从入门到精通`
+                    ]
+                };
+
+                AppState.generatedData.titles = titles;
+                displayTitles(titles);
+                elements.titleCard.classList.add('show');
+
+                hideLoading();
+                showToast('✅ 标题创作完成');
+                return;
+            }
+
+            try {
+                const profile = audienceProfiles[params.targetAudience];
+                const prompt = `请为主题"${params.topic}"创作5个微信公众号标题。
+
+目标读者：${profile.name}
+读者偏好：${profile.characteristics.languagePreference}
+文章内容片段：${articleContent.substring(0, 500)}
+
+要求：
+1. 标题要吸引目标读者点击
+2. 符合微信公众号标题的特点（15-25字）
+3. 包含emoji表情增加吸引力
+4. 标题风格要多样化（悬念型、干货型、情感型等）
+
+请直接返回5个标题，每行一个，不要JSON格式。`;
+
+                const result = await callAIModel(aiModel, apiConfig, prompt);
+                const titles = parseFiveTitles(result);
+
+                AppState.generatedData.titles = titles;
+                displayTitles(titles);
+                elements.titleCard.classList.add('show');
+
+                hideLoading();
+                showToast('✅ 标题创作完成');
+            } catch (error) {
+                hideLoading();
+                throw error;
+            }
+        }
+
+        function parseFiveTitles(text) {
+            const lines = text.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+
+            // 提取标题（去除序号、符号等）
+            const titles = [];
+            for (const line of lines) {
+                // 去除序号前缀
+                let title = line.replace(/^[\d\.\、\-\•]+[\s]*/, '').trim();
+
+                // 去除可能的引号
+                title = title.replace(/^["'"""]|["'"""]$/g, '').trim();
+
+                if (title.length > 5 && title.length < 100) {
+                    titles.push(title);
+                }
+
+                if (titles.length >= 5) break;
+            }
+
+            // 如果解析出的标题不足5个，补充默认标题
+            while (titles.length < 5) {
+                titles.push(`📝 标题 ${titles.length + 1}（需要完善）`);
+            }
+
+            return { all: titles.slice(0, 5) };
+        }
+
+        async function generateFormat() {
+            showLoading('📐 正在生成排版建议...');
+            await simulateDelay(1000);
+
+            const format = `# 📱 微信公众号排版建议
+
+### 一、标题层级
+- 主标题：18-20px，加粗居中
+- 二级标题：16-18px，加粗左对齐
+- 三级标题：14-16px，加粗左对齐
+
+### 二、段落设计
+- 每段3-5行，避免大段文字
+- 行间距1.75-2倍
+- 段落间空一行
+
+### 三、视觉元素
+- 每300-500字插入配图
+- 重点内容加粗突出
+- 使用引用块展示数据
+
+### 四、移动端优化
+- 正文14-16px字号
+- 左右边距15-20px
+- 不使用首行缩进
+
+💡 好的排版能提升30%以上的阅读完成率！`;
+
+            AppState.generatedData.format = format;
+            elements.formatContent.textContent = format;
+            elements.formatCard.classList.add('show');
+
+            hideLoading();
+            showToast('✅ 排版建议生成完成');
+        }
+
+        function displayTitles(titles) {
+            let html = '';
+            titles.all.forEach((title, index) => {
+                html += `<div class="title-item">${index + 1}. ${title}</div>`;
+            });
+            elements.titleContent.innerHTML = html;
+        }
+
+        // ==================== 文字粘贴改写 ====================
+        async function pasteAndRewrite() {
+            const content = elements.pasteContent.value.trim();
+            const targetAudience = elements.pasteTargetAudience.value;
+            const rewriteDirection = elements.rewriteDirection.value;
+            const extraNotes = elements.pasteExtraNotes.value.trim();
+
+            if (!content) {
+                showToast('❌ 请粘贴需要改写的内容', true);
+                elements.pasteContent.focus();
+                return;
+            }
+
+            if (!targetAudience) {
+                showToast('❌ 请选择目标读者', true);
+                elements.pasteTargetAudience.focus();
+                return;
+            }
+
+            try {
+                showLoading('✍️ 正在智能改写...');
+
+                const profile = audienceProfiles[targetAudience];
+                const aiModel = elements.aiModel.value;
+                const apiConfig = getApiConfig(aiModel);
+
+                let prompt = `
+【原文内容】
+${content.substring(0, 8000)}
+
+【目标读者】
+${profile.name}
+- 你的身份：${profile.role}
+- 叙事结构：${profile.narrativeStructure}
+- 技术约束：${profile.technicalConstraint}
+- 语言偏好：${profile.characteristics.languagePreference}
+
+【改写方向】
+${rewriteDirection === 'adaptive' ? '智能适配（根据目标读者自动调整）' : rewriteDirection}
+
+【改写要求】
+1. 完全按照目标读者的认知特点和语言偏好进行改写
+2. 保持原文核心观点和关键信息
+3. 严格按照指定的叙事结构重组内容
+4. 删除所有不符合目标读者认知的专业术语
+5. 使用自然、口语化的表达，避免AI腔
+6. 字数控制在${Math.max(800, content.length * 0.8)}-${Math.min(3000, content.length * 1.5)}字之间
+
+【语气要求】
+${profile.toneGuidelines.map(g => `- ${g}`).join('\n')}
+
+【禁止使用的表达】
+- "从某种意义上说"
+- "本质上"
+- "我们可以看到"
+- 任何总结性的过渡句
+
+${extraNotes ? `\n【额外要求】\n${extraNotes}` : ''}
+
+请开始改写：
+`;
+
+                let result;
+                if (aiModel === 'simulate') {
+                    await simulateDelay(2000);
+                    result = simulatePasteRewrite(content, profile);
+                } else {
+                    result = await callAIModel(aiModel, apiConfig, prompt);
+                }
+
+                // 显示结果
+                elements.articleContent1.textContent = result;
+                elements.articleCard1.classList.add('show');
+                elements.resultsSection.style.display = 'grid';
+
+                // 生成标题
+                showLoading('🎯 正在生成标题...');
+                const titles = await generateTitlesFromContent(result, targetAudience);
+                displayTitles(titles);
+                elements.titleCard.classList.add('show');
+
+                hideLoading();
+                showToast('✅ 改写完成！');
+
+            } catch (error) {
+                hideLoading();
+                showToast('❌ 改写失败：' + error.message, true);
+                console.error('改写错误:', error);
+            }
+        }
+
+        // ==================== 模拟粘贴改写 ====================
+        function simulatePasteRewrite(content, profile) {
+            return `# 改写后的文章
+
+（这是模拟输出，实际使用时会调用AI模型进行完整改写）
+
+【目标读者】${profile.name}
+【改写方向】智能适配
+
+原文已根据${profile.name}的阅读习惯进行改写：
+- 采用"${profile.narrativeStructure}"的叙事结构
+- 使用${profile.characteristics.languagePreference}的表达方式
+- 遵循${profile.technicalConstraint}
+
+原文长度：${content.length}字
+改写后预计长度：${Math.round(content.length * 0.9)}字
+
+---
+${content.substring(0, 500)}...
+`;
+        }
+
+        // ==================== URL文章抓取与改写 ====================
+        async function fetchAndRewriteArticle() {
+            const url = elements.articleUrl.value.trim();
+            const urlType = elements.urlType.value;
+            const targetAudience = elements.urlTargetAudience.value;
+            const rewriteDirection = elements.urlRewriteDirection.value;
+            const extraNotes = elements.urlExtraNotes.value.trim();
+
+            if (!url) {
+                showToast('❌ 请输入文章链接', true);
+                elements.articleUrl.focus();
+                return;
+            }
+
+            if (!isValidUrl(url)) {
+                showToast('❌ 请输入有效的URL地址', true);
+                elements.articleUrl.focus();
+                return;
+            }
+
+            if (!targetAudience) {
+                showToast('❌ 请选择目标读者', true);
+                elements.urlTargetAudience.focus();
+                return;
+            }
+
+            try {
+                showLoading('🌐 正在抓取文章内容...');
+                const articleContent = await fetchArticleContent(url);
+
+                showLoading('🔍 正在分析文章语言...');
+                let contentToSummarize = articleContent;
+                const isEnglishContent = detectLanguage(articleContent) === 'en';
+
+                if (isEnglishContent || urlType === 'english') {
+                    showLoading('🌐 正在翻译文章内容...');
+                    contentToSummarize = await translateText(articleContent, 'en', 'zh');
+                }
+
+                showLoading('📝 正在生成文章总结...');
+                const summary = await generateSummary(contentToSummarize);
+
+                elements.summaryContent.textContent = summary;
+                elements.summaryPreview.style.display = 'block';
+
+                showLoading('✍️ 正在改写文章...');
+                const profile = audienceProfiles[targetAudience];
+                const aiModel = elements.aiModel.value;
+                const apiConfig = getApiConfig(aiModel);
+
+                let prompt = `
+【原文总结】
+${summary}
+
+【目标读者】
+${profile.name}
+- 你的身份：${profile.role}
+- 叙事结构：${profile.narrativeStructure}
+- 技术约束：${profile.technicalConstraint}
+- 语言偏好：${profile.characteristics.languagePreference}
+
+【改写方向】
+${rewriteDirection === 'adaptive' ? '智能适配（根据目标读者自动调整）' : rewriteDirection}
+
+【改写要求】
+1. 完全按照目标读者的认知特点和语言偏好进行改写
+2. 根据总结扩展为一篇完整的公众号文章
+3. 严格按照指定的叙事结构组织内容
+4. 字数1500-2000字
+5. 适当使用emoji表情
+6. 结尾要有互动引导
+
+【语气要求】
+${profile.toneGuidelines.map(g => `- ${g}`).join('\n')}
+
+${extraNotes ? `\n【额外要求】\n${extraNotes}` : ''}
+
+请开始改写：
+`;
+
+                let rewrittenArticle;
+                if (aiModel === 'simulate') {
+                    await simulateDelay(2000);
+                    rewrittenArticle = simulateUrlRewrite(summary, profile);
+                } else {
+                    rewrittenArticle = await callAIModel(aiModel, apiConfig, prompt);
+                }
+
+                showLoading('🎯 正在生成标题...');
+                const titles = await generateTitlesFromContent(rewrittenArticle, targetAudience);
+
+                displayUrlResults(rewrittenArticle, titles, summary);
+                hideLoading();
+                showToast('✅ 文章抓取与改写完成！');
+
+            } catch (error) {
+                hideLoading();
+                showToast('❌ 处理失败：' + error.message, true);
+                console.error('URL抓取错误:', error);
+            }
+        }
+
+        // ==================== 模拟URL改写 ====================
+        function simulateUrlRewrite(summary, profile) {
+            return `# 根据原文改写的文章
+
+【目标读者】${profile.name}
+【叙事结构】${profile.narrativeStructure}
+
+基于以下总结进行改写：
+${summary.substring(0, 300)}...
+
+（完整改写内容需要配置API后使用真实AI模型生成）
+`;
+        }
+
+        // ==================== 根据内容生成标题 ====================
+        async function generateTitlesFromContent(content, targetAudience) {
+            const profile = audienceProfiles[targetAudience];
+            const aiModel = elements.aiModel.value;
+            const apiConfig = getApiConfig(aiModel);
+
+            if (aiModel === 'simulate') {
+                await simulateDelay(1000);
+                return {
+                    all: [
+                        '🔥 揭秘真相：为什么90%的人都理解错了？',
+                        '💡 看完这篇就够了，干货满满！',
+                        '⚡ 不看后悔！这3个关键信号你必须知道',
+                        '🎯 关键信息，建议收藏',
+                        '📖 深度解析，值得一看'
+                    ]
+                };
+            }
+
+            try {
+                const prompt = `请为以下文章内容创作5个微信公众号标题。
+
+目标读者：${profile.name}
+读者偏好：${profile.characteristics.languagePreference}
+
+要求：
+1. 标题要吸引目标读者点击
+2. 符合微信公众号标题的特点（15-25字）
+3. 包含emoji表情增加吸引力
+4. 标题风格要多样化
+
+请直接返回5个标题，每行一个，不要JSON格式。
+
+文章内容：
+${content.substring(0, 1000)}`;
+
+                const result = await callAIModel(aiModel, apiConfig, prompt);
+                return parseFiveTitles(result);
+            } catch (error) {
+                throw new Error('生成标题失败：' + error.message);
+            }
+        }
+
+        function displayUrlResults(article, titles, summary) {
+            elements.articleContent1.textContent = article;
+            elements.articleCard1.classList.add('show');
+
+            displayTitles(titles);
+            elements.titleCard.classList.add('show');
+
+            const format = `# 📱 微信公众号排版建议
+
+- 标题使用18-20px字号，加粗居中
+- 正文使用14-16px字号，1.75倍行距
+- 每段3-5行，避免大段文字
+- 每300-500字插入一张配图
+- 重点内容用加粗或引用格式突出`;
+
+            elements.formatContent.textContent = format;
+            elements.formatCard.classList.add('show');
+            elements.resultsSection.style.display = 'grid';
+        }
+
+        // ==================== 工具函数 ====================
+        function validateForm() {
+            const topic = elements.topic.value.trim();
+            const coreView = elements.coreView.value.trim();
+            const targetAudience = elements.targetAudience.value;
+
+            if (!topic) {
+                showToast('❌ 请输入选题主题', true);
+                elements.topic.focus();
+                return false;
+            }
+
+            if (!coreView) {
+                showToast('❌ 请输入核心观点', true);
+                elements.coreView.focus();
+                return false;
+            }
+
+            if (!targetAudience) {
+                showToast('❌ 请选择目标读者', true);
+                elements.targetAudience.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        function getFormParams() {
+            return {
+                topic: elements.topic.value.trim(),
+                coreView: elements.coreView.value.trim(),
+                wordCount: parseInt(elements.wordCount.value),
+                targetAudience: elements.targetAudience.value,
+                keywords: elements.keywords.value.trim()
+            };
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function simulateDelay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function copyContent(targetId) {
+            const targetElement = document.getElementById(targetId);
+            const content = targetElement.textContent || targetElement.innerText;
+
+            try {
+                await navigator.clipboard.writeText(content);
+                showToast('✅ 已复制到剪贴板');
+            } catch (err) {
+                copyText(content);
+            }
+        }
+
+        function copyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('✅ 已复制到剪贴板');
+            } catch (err) {
+                showToast('❌ 复制失败，请手动复制', true);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function showLoading(text) {
+            elements.loadingText.textContent = text;
+            elements.loadingOverlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            elements.loadingOverlay.classList.remove('active');
+        }
+
+        function showToast(message, isError = false) {
+            elements.toast.textContent = message;
+            elements.toast.classList.toggle('error', isError);
+            elements.toast.classList.add('show');
+
+            setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function clearForm() {
+            if (confirm('确定要清空所有内容吗？')) {
+                elements.createForm.reset();
+                elements.progressSection.style.display = 'none';
+                elements.resultsSection.style.display = 'none';
+                elements.articleCard1.classList.remove('show');
+                elements.articleCard2.classList.remove('show');
+                elements.titleCard.classList.remove('show');
+                elements.formatCard.classList.remove('show');
+                elements.readerTypeExplanation.innerHTML = '';
+
+                // 重置所有步骤状态
+                ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+                    updateStepStatus(document.getElementById(id), 'pending');
+                });
+
+                // 重置进度条连接线
+                const progressSteps = document.getElementById('progressSteps');
+                progressSteps.classList.remove(
+                    'step-1-completed',
+                    'step-2-completed',
+                    'step-3-completed',
+                    'step-4-completed'
+                );
+
+                elements.articleContent1.textContent = '';
+                elements.articleContent2.textContent = '';
+                elements.titleContent.textContent = '';
+                elements.formatContent.textContent = '';
+
+                showToast('✅ 已清空所有内容');
+            }
+        }
+
+        function clearPasteForm() {
+            elements.pasteContent.value = '';
+            elements.pasteExtraNotes.value = '';
+            elements.resultsSection.style.display = 'none';
+            elements.articleCard1.classList.remove('show');
+            elements.articleCard2.classList.remove('show');
+            elements.titleCard.classList.remove('show');
+            elements.formatCard.classList.remove('show');
+            showToast('✅ 已清空粘贴表单');
+        }
+
+        function clearUrlForm() {
+            elements.articleUrl.value = '';
+            elements.urlExtraNotes.value = '';
+            elements.summaryPreview.style.display = 'none';
+            elements.summaryContent.textContent = '';
+            elements.resultsSection.style.display = 'none';
+            elements.articleCard1.classList.remove('show');
+            elements.articleCard2.classList.remove('show');
+            elements.titleCard.classList.remove('show');
+            elements.formatCard.classList.remove('show');
+            showToast('✅ 已清空URL表单');
+        }
+
+        // ==================== API配置管理 ====================
+        function toggleApiConfig(model) {
+            const config = document.getElementById(model + 'Config');
+            const toggle = document.getElementById(model + 'Toggle');
+            config.classList.toggle('show');
+            toggle.textContent = config.classList.contains('show') ? '▼' : '▶';
+        }
+
+        function saveApiKey(model) {
+            const config = {
+                apiKey: document.getElementById(model + 'ApiKey').value,
+                baseUrl: document.getElementById(model + 'BaseUrl').value,
+                model: document.getElementById(model + 'Model').value
+            };
+
+            if (!config.apiKey) {
+                showToast('❌ 请输入API Key', true);
+                return;
+            }
+
+            AppState.apiConfig[model] = config;
+            localStorage.setItem(`apiConfig_${model}`, JSON.stringify(config));
+            showToast('✅ 配置已保存');
+        }
+
+        function loadSavedApiConfigs() {
+            const models = ['deepseek', 'doubao', 'kimi', 'tongyi'];
+
+            models.forEach(model => {
+                const saved = localStorage.getItem(`apiConfig_${model}`);
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    AppState.apiConfig[model] = config;
+
+                    document.getElementById(model + 'ApiKey').value = config.apiKey || '';
+                    document.getElementById(model + 'BaseUrl').value = config.baseUrl || '';
+                    document.getElementById(model + 'Model').value = config.model || '';
+                }
+            });
+        }
+
+        async function testApiKey(model) {
+            const config = {
+                apiKey: document.getElementById(model + 'ApiKey').value,
+                baseUrl: document.getElementById(model + 'BaseUrl').value,
+                model: document.getElementById(model + 'Model').value
+            };
+
+            if (!config.apiKey) {
+                showToast('❌ 请先输入API Key', true);
+                return;
+            }
+
+            try {
+                showLoading(`🧪 正在测试${model}连接...`);
+                const testPrompt = '请回复"连接成功"';
+                await callAIModel(model, config, testPrompt);
+
+                hideLoading();
+                showToast('✅ 连接测试成功！');
+            } catch (error) {
+                hideLoading();
+                showToast('❌ 连接测试失败：' + error.message, true);
+            }
+        }
+
+        function getApiConfig(model) {
+            const config = AppState.apiConfig[model];
+            if (!config || !config.apiKey) {
+                throw new Error(`请先配置${model}的API密钥`);
+            }
+            return config;
+        }
+
+        async function callAIModel(model, config, prompt) {
+            const commonHeaders = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`
+            };
+
+            let apiUrl, requestBody;
+
+            switch (model) {
+                case 'deepseek':
+                    apiUrl = `${config.baseUrl}/chat/completions`;
+                    requestBody = {
+                        model: config.model,
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7
+                    };
+                    break;
+
+                case 'doubao':
+                    apiUrl = `${config.baseUrl}/chat/completions`;
+                    requestBody = {
+                        model: config.model,
+                        messages: [{ role: 'user', content: prompt }]
+                    };
+                    break;
+
+                case 'kimi':
+                    apiUrl = `${config.baseUrl}/chat/completions`;
+                    requestBody = {
+                        model: config.model,
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7
+                    };
+                    break;
+
+                case 'tongyi':
+                    apiUrl = `${config.baseUrl}/chat/completions`;
+                    requestBody = {
+                        model: config.model,
+                        messages: [{ role: 'user', content: prompt }]
+                    };
+                    break;
+
+                default:
+                    throw new Error('不支持的模型：' + model);
+            }
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: commonHeaders,
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error?.message || `API调用失败: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        // ==================== 文章处理函数 ====================
+        async function fetchArticleContent(url) {
+            // 扩展的CORS代理列表
+            const corsProxies = [
+                'https://api.allorigins.win/raw?url=',
+                'https://corsproxy.io/?',
+                'https://cors-anywhere.herokuapp.com/',
+                'https://api.codetabs.com/v1/proxy?quest=',
+                'https://thingproxy.freeboard.io/fetch/',
+                ''  // 直接尝试
+            ];
+
+            // 针对常见网站的专门处理
+            const siteHandlers = {
+                'mp.weixin.qq.com': async () => {
+                    throw new Error('微信公众号文章受保护，请复制文章内容到"文字粘贴"功能');
+                },
+                'zhihu.com': async () => {
+                    throw new Error('知乎文章需要登录，建议复制内容到"文字粘贴"功能');
+                }
+            };
+
+            // 检查是否是需要特殊处理的网站
+            try {
+                const urlObj = new URL(url);
+                const hostname = urlObj.hostname;
+
+                for (const [site, handler] of Object.entries(siteHandlers)) {
+                    if (hostname.includes(site)) {
+                        await handler();
+                        return null;
+                    }
+                }
+            } catch (e) {
+                // URL解析失败，继续尝试抓取
+            }
+
+            // 尝试多个代理和重试
+            let lastError = null;
+            const maxRetries = 2; // 每个代理最多重试2次
+
+            for (const proxy of corsProxies) {
+                for (let retry = 0; retry < maxRetries; retry++) {
+                    try {
+                        console.log(`尝试代理 ${proxy || '直接连接'} (第${retry + 1}次)...`);
+
+                        const fetchUrl = proxy
+                            ? proxy + encodeURIComponent(url)
+                            : url;
+
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+
+                        const response = await fetch(fetchUrl, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                                'Cache-Control': 'no-cache',
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                            },
+                            signal: controller.signal
+                        });
+
+                        clearTimeout(timeoutId);
+
+                        if (response.ok) {
+                            const html = await response.text();
+
+                            // 检查是否是有效的HTML内容
+                            if (html.length < 500) {
+                                console.log('内容过短，继续尝试...');
+                                continue;
+                            }
+
+                            // 检查是否被重定向到错误页面
+                            if (html.includes('Access denied') ||
+                                html.includes('403 Forbidden') ||
+                                html.includes('404 Not Found') ||
+                                html.includes('请求被拒绝')) {
+                                console.log('访问被拒绝，尝试下一个代理...');
+                                continue;
+                            }
+
+                            const content = extractArticleContent(html);
+                            if (content && content.length > 300) {
+                                console.log('成功抓取内容！长度:', content.length);
+                                return content;
+                            }
+                        } else {
+                            console.log(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                    } catch (e) {
+                        lastError = e;
+                        console.log(`错误: ${e.message}，代理 ${proxy || '直接连接'} 失败`);
+
+                        // 如果是AbortError（超时），立即尝试下一个代理
+                        if (e.name === 'AbortError') {
+                            console.log('请求超时，尝试下一个代理...');
+                            break;
+                        }
+
+                        // 等待一小段时间后重试
+                        if (retry < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                }
+            }
+
+            // 如果所有代理都失败，返回用户友好的错误信息
+            throw new Error(
+                '无法抓取该网站内容。建议：\n' +
+                '1. 复制文章内容到"文字粘贴"功能\n' +
+                '2. 尝试其他网站的文章链接\n' +
+                '3. 部分网站（如微信、知乎）有访问限制\n\n' +
+                '技术原因：' + (lastError?.message || '可能受到CORS限制或网站反爬虫机制')
+            );
+        }
+
+        function extractArticleContent(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // 移除不需要的标签
+            const unwantedTags = ['script', 'style', 'nav', 'header', 'footer', 'aside', 'iframe', 'noscript', 'svg', 'link', 'meta'];
+            unwantedTags.forEach(tag => {
+                doc.querySelectorAll(tag).forEach(el => el.remove());
+            });
+
+            // 移除常见的广告和无关元素
+            const unwantedClasses = [
+                'ad', 'advertisement', 'banner', 'sidebar', 'comment', 'comments',
+                'related', 'recommend', 'share', 'social', 'footer', 'navigation'
+            ];
+            unwantedClasses.forEach(cls => {
+                doc.querySelectorAll(`[class*="${cls}"]`).forEach(el => el.remove());
+            });
+
+            // 扩展的文章内容选择器（按优先级排序）
+            const articleSelectors = [
+                // 标准HTML5标签
+                'article',
+                '[role="article"]',
+
+                // 常见中文网站
+                '.post-content',
+                '.article-content',
+                '.entry-content',
+                '.post-body',
+                '.article-body',
+                '.content',
+                '.article',
+                '.post',
+                '.main-content',
+                '.rich_media_content',  // 微信公众号
+                '.show-content',         // 知乎
+                '.markdown-body',        // GitHub
+
+                // 常见英文网站
+                '[itemprop="articleBody"]',
+                '[property="article:body"]',
+                '.post-content',
+                '.entry-content',
+                '.article-body',
+                '.content-body',
+
+                // 通用容器
+                'main',
+                '#content',
+                '#main',
+                '.container',
+                '.wrapper'
+            ];
+
+            // 尝试找到最合适的内容容器
+            for (const selector of articleSelectors) {
+                const elements = doc.querySelectorAll(selector);
+
+                for (const article of elements) {
+                    const text = article.textContent
+                        .replace(/\s+/g, ' ')
+                        .trim();
+
+                    // 过滤掉太短的内容（可能是广告或导航）
+                    if (text.length > 300) {
+                        // 计算文本密度（文本字符数 / 总字符数）
+                        const density = text.length / article.innerHTML.length;
+
+                        // 如果文本密度大于0.15，认为是有效内容
+                        if (density > 0.15) {
+                            console.log(`使用选择器 "${selector}" 找到内容，长度: ${text.length}`);
+                            return text.substring(0, 15000); // 增加到15000字符
+                        }
+                    }
+                }
+            }
+
+            // 如果都没找到，尝试提取p标签
+            const paragraphs = doc.querySelectorAll('p');
+            if (paragraphs.length > 3) {
+                let content = '';
+                paragraphs.forEach(p => {
+                    const text = p.textContent.trim();
+                    if (text.length > 20) {
+                        content += text + '\n\n';
+                    }
+                });
+
+                if (content.length > 300) {
+                    console.log('从段落提取内容');
+                    return content.trim().substring(0, 15000);
+                }
+            }
+
+            // 最后的备选方案：返回body文本，但清理格式
+            console.log('使用body文本作为备选');
+            return doc.body.textContent
+                .replace(/\s+/g, ' ')
+                .trim()
+                .substring(0, 15000);
+        }
+
+        function detectLanguage(text) {
+            const chineseChars = text.match(/[\u4e00-\u9fa5]/g);
+            const englishChars = text.match(/[a-zA-Z]/g);
+
+            if (chineseChars && chineseChars.length > 100) {
+                return 'zh';
+            } else if (englishChars && englishChars.length > 100) {
+                return 'en';
+            }
+            return 'unknown';
+        }
+
+        async function translateText(text, from, to) {
+            const aiModel = elements.aiModel.value;
+            const apiConfig = getApiConfig(aiModel);
+
+            if (aiModel === 'simulate') {
+                await simulateDelay(1500);
+                return `[翻译结果] ${text.substring(0, 500)}...`;
+            }
+
+            try {
+                const prompt = `请将以下${from === 'en' ? '英文' : '中文'}文本翻译成${to === 'en' ? '英文' : '中文'}：\n\n${text.substring(0, 3000)}`;
+                const result = await callAIModel(aiModel, apiConfig, prompt);
+                return result;
+            } catch (error) {
+                throw new Error('翻译失败：' + error.message);
+            }
+        }
+
+        async function generateSummary(content) {
+            const aiModel = elements.aiModel.value;
+            const apiConfig = getApiConfig(aiModel);
+
+            if (aiModel === 'simulate') {
+                await simulateDelay(2000);
+                return `# 文章总结\n\n${content.substring(0, 500)}...`;
+            }
+
+            try {
+                const prompt = `请对以下文章内容进行总结，要求：\n1. 保留所有核心观点\n2. 简洁明了，条理清晰\n3. 突出文章价值\n\n文章内容：\n${content.substring(0, 4000)}`;
+                const result = await callAIModel(aiModel, apiConfig, prompt);
+                return result;
+            } catch (error) {
+                throw new Error('生成总结失败：' + error.message);
+            }
+        }
+
+        // ==================== OCR功能实现 ====================
+        let uploadedFiles = [];
+
+        function handleFiles(files) {
+            const validFiles = Array.from(files).filter(file => {
+                const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf';
+                if (!isValidType) {
+                    showToast(`❌ 不支持的文件类型: ${file.name}`, true);
+                }
+                return isValidType;
+            });
+
+            uploadedFiles = [...uploadedFiles, ...validFiles];
+            updateFileList();
+        }
+
+        function updateFileList() {
+            if (uploadedFiles.length === 0) {
+                elements.uploadPlaceholder.style.display = 'block';
+                elements.fileList.innerHTML = '';
+                return;
+            }
+
+            elements.uploadPlaceholder.style.display = 'none';
+            elements.fileList.innerHTML = uploadedFiles.map((file, index) => {
+                const icon = file.type === 'application/pdf' ? '📄' : '🖼️';
+                const size = formatFileSize(file.size);
+
+                return `
+                    <div class="file-item">
+                        <div class="file-item-info">
+                            <span class="file-item-icon">${icon}</span>
+                            <div>
+                                <div class="file-item-name">${file.name}</div>
+                                <div class="file-item-size">${size}</div>
+                            </div>
+                        </div>
+                        <button class="file-item-remove" onclick="removeFile(${index})">删除</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        async function startOCR() {
+            if (uploadedFiles.length === 0) {
+                showToast('❌ 请先上传图片或PDF文件', true);
+                return;
+            }
+
+            const ocrLanguage = elements.ocrLanguage.value;
+            const targetAudience = elements.ocrTargetAudience.value;
+
+            if (!targetAudience) {
+                showToast('❌ 请选择目标读者', true);
+                elements.ocrTargetAudience.focus();
+                return;
+            }
+
+            try {
+                elements.ocrProgress.style.display = 'block';
+                elements.ocrResult.style.display = 'none';
+                elements.startOcrBtn.disabled = true;
+
+                let allText = '';
+
+                for (let i = 0; i < uploadedFiles.length; i++) {
+                    const file = uploadedFiles[i];
+                    updateProgress(0, `正在处理文件 ${i + 1}/${uploadedFiles.length}: ${file.name}`);
+
+                    const text = await processFile(file, ocrLanguage);
+                    allText += `\n\n===== ${file.name} =====\n\n${text}`;
+                }
+
+                updateProgress(100, '识别完成！');
+
+                elements.ocrOutput.value = allText.trim();
+                elements.ocrResult.style.display = 'block';
+
+                const action = elements.ocrAction.value;
+
+                if (action === 'copy') {
+                    await navigator.clipboard.writeText(allText);
+                    showToast('✅ 识别结果已复制到剪贴板');
+                } else if (action === 'paste') {
+                    elements.pasteContent.value = allText;
+                    switchTab('paste');
+                    showToast('✅ 识别结果已复制到文字粘贴');
+                } else if (action === 'rewrite') {
+                    await rewriteOCRResult();
+                }
+
+            } catch (error) {
+                showToast('❌ 识别失败：' + error.message, true);
+                console.error('OCR错误:', error);
+            } finally {
+                elements.startOcrBtn.disabled = false;
+            }
+        }
+
+        async function processFile(file, language) {
+            if (file.type === 'application/pdf') {
+                return await processPDF(file, language);
+            } else {
+                return await processImage(file, language);
+            }
+        }
+
+        async function processImage(file, language) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = async (e) => {
+                    try {
+                        const result = await Tesseract.recognize(
+                            e.target.result,
+                            language,
+                            {
+                                logger: m => {
+                                    if (m.status === 'recognizing text') {
+                                        const progress = Math.round(m.progress * 100);
+                                        updateProgress(progress, `正在识别文字... ${progress}%`);
+                                    }
+                                }
+                            }
+                        );
+
+                        resolve(result.data.text);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function processPDF(file, language) {
+            // 使用PDF.js处理PDF文件
+            const pdfjsLib = await loadPDFJS();
+
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = async (e) => {
+                    try {
+                        const typedArray = new Uint8Array(e.target.result);
+                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+                        let allText = '';
+
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            updateProgress(
+                                (i - 1) / pdf.numPages * 100,
+                                `正在处理PDF第 ${i}/${pdf.numPages} 页...`
+                            );
+
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+
+                            const pageText = textContent.items
+                                .map(item => item.str)
+                                .join(' ');
+
+                            allText += `\n\n--- 第 ${i} 页 ---\n\n${pageText}`;
+                        }
+
+                        // 如果PDF提取不到文字，尝试转换为图片进行OCR
+                        if (allText.trim().length < 50) {
+                            showToast('⚠️ PDF无法直接提取文字，将转为图片识别', true);
+                            const pdfImages = await convertPDFToImages(pdf);
+                            let ocrText = '';
+
+                            for (let i = 0; i < pdfImages.length; i++) {
+                                updateProgress(
+                                    i / pdfImages.length * 100,
+                                    `正在OCR识别第 ${i + 1}/${pdfImages.length} 页...`
+                                );
+
+                                const result = await Tesseract.recognize(
+                                    pdfImages[i],
+                                    language,
+                                    {
+                                        logger: m => {
+                                            if (m.status === 'recognizing text') {
+                                                const progress = Math.round(m.progress * 100);
+                                                updateProgress(
+                                                    i / pdfImages.length * 100 + progress / pdfImages.length,
+                                                    `正在OCR识别第 ${i + 1}/${pdfImages.length} 页... ${progress}%`
+                                                );
+                                            }
+                                        }
+                                    }
+                                );
+
+                                ocrText += `\n\n--- 第 ${i + 1} 页 ---\n\n${result.data.text}`;
+                            }
+
+                            resolve(ocrText);
+                        } else {
+                            resolve(allText);
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                reader.onerror = () => reject(new Error('PDF文件读取失败'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function loadPDFJS() {
+            if (window.pdfjsLib) {
+                return window.pdfjsLib;
+            }
+
+            // 动态加载PDF.js
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+
+            return new Promise((resolve, reject) => {
+                script.onload = () => {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    resolve(window.pdfjsLib);
+                };
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        async function convertPDFToImages(pdf) {
+            const images = [];
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 2 });
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+
+                images.push(canvas.toDataURL('image/png'));
+            }
+
+            return images;
+        }
+
+        function updateProgress(percent, text) {
+            elements.progressFill.style.width = percent + '%';
+            elements.progressText.textContent = text;
+        }
+
+        function clearOCR() {
+            uploadedFiles = [];
+            updateFileList();
+            elements.ocrOutput.value = '';
+            elements.ocrResult.style.display = 'none';
+            elements.ocrProgress.style.display = 'none';
+            elements.progressFill.style.width = '0%';
+            showToast('✅ 已清空OCR内容');
+        }
+
+        async function rewriteOCRResult() {
+            const ocrText = elements.ocrOutput.value.trim();
+
+            if (!ocrText) {
+                showToast('❌ 没有可改写的内容', true);
+                return;
+            }
+
+            const targetAudience = elements.ocrTargetAudience.value;
+
+            if (!targetAudience) {
+                showToast('❌ 请选择目标读者', true);
+                elements.ocrTargetAudience.focus();
+                return;
+            }
+
+            try {
+                showLoading('✍️ 正在智能改写识别结果...');
+
+                const profile = audienceProfiles[targetAudience];
+                const aiModel = elements.aiModel.value;
+                const apiConfig = getApiConfig(aiModel);
+
+                const prompt = `
+【原始识别文字】
+${ocrText}
+
+【目标读者】
+${profile.name}
+- 你的身份：${profile.role}
+- 叙事结构：${profile.narrativeStructure}
+- 技术约束：${profile.technicalConstraint}
+- 语言偏好：${profile.characteristics.languagePreference}
+
+【改写要求】
+1. 完全按照目标读者的认知特点和语言偏好进行改写
+2. 修复OCR识别可能产生的错误
+3. 保持原文核心观点和关键信息
+4. 严格按照指定的叙事结构重组内容
+5. 使用自然、口语化的表达，避免AI腔
+
+【语气要求】
+${profile.toneGuidelines.map(g => `- ${g}`).join('\n')}
+
+请开始改写：
+`;
+
+                let result;
+                if (aiModel === 'simulate') {
+                    await simulateDelay(2000);
+                    result = `# 改写后的内容\n\n（这是模拟输出，实际使用时会调用AI模型进行完整改写）\n\n原始文字长度：${ocrText.length}字`;
+                } else {
+                    result = await callAIModel(aiModel, apiConfig, prompt);
+                }
+
+                // 显示结果
+                elements.articleContent1.textContent = result;
+                elements.articleCard1.classList.add('show');
+                elements.resultsSection.style.display = 'grid';
+
+                // 切换到结果视图
+                switchTab('manual');
+
+                hideLoading();
+                showToast('✅ 改写完成！');
+
+            } catch (error) {
+                hideLoading();
+                showToast('❌ 改写失败：' + error.message, true);
+                console.error('改写错误:', error);
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', initEventListeners);
+    </script>
+</body>
+</html>
